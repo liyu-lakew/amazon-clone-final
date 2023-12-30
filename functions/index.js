@@ -1,39 +1,35 @@
-const functions = require("firebase-functions");
+require("dotenv").config();
 
 const express = require("express");
 const cors = require("cors");
-const stripe = require("stripe")(
-  'sk_test_51OPgVaLEnGtXJ3In2mKyGZCHxkZ8oEDlXplekKtpuPCdPnSlmCVpYvLsPTRlTU3kRrmPDcDCRw5hivkyWuioWTvt00SkQgaaM3'
-);
+const stripe = require("stripe")(process.env.STRIPE_PRIVATE_KEY); // secret key
 
-// - App config
 const app = express();
 
-// - Middlewears
-app.use(cors({ origin: true }));
+app.use(cors());
 app.use(express.json());
-
 app.get("/", (request, response) => response.status(200).send("hello world"));
-
-
-
 app.post("/payments/create", async (request, response) => {
   const total = request.query.total;
-
-  console.log("Payment Request Recieved for this amount >>>", total);
-
-  const paymentIntent = await stripe.paymentIntents.create({
-    amount: total, 
-    // Subunits of the currency
-    currency: "usd",
-  });
-
-  // Ok - Created
-  response.status(201).send({
-    clientSecret: paymentIntent.client_secret,
-  });
+  try {
+    console.log("payment Request Recived for this amount>>>", total);
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: parseInt(total),
+      currency: "USD",
+    });
+    //ok-created
+    response.status(201).send({
+      clientSecret: paymentIntent.client_secret,
+    });
+  } catch (error) {
+    response.status(500).send("server error");
+    console.log(error);
+  }
 });
-
-// // - Listen Command
-exports.api = functions.https.onRequest(app);  
-
+app.listen(10000, (err) => {
+  if (err) {
+    console.log(err);
+  } else {
+    console.log("listenig 10000");
+  }
+});
